@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ chatbot_title }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #eef1f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .chat-container {
+    width: 420px;
+    height: 640px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-header {
+    background: #1f2937;
+    color: #ffffff;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .message {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    line-height: 1.4;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+  .user {
+    align-self: flex-end;
+    background: #2563eb;
+    color: #ffffff;
+    border-bottom-right-radius: 2px;
+  }
+  .bot {
+    align-self: flex-start;
+    background: #f1f5f9;
+    color: #111827;
+    border-bottom-left-radius: 2px;
+  }
+  .chat-input {
+    display: flex;
+    border-top: 1px solid #e5e7eb;
+    padding: 10px;
+    gap: 8px;
+  }
+  .chat-input input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+  }
+  .chat-input button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .chat-input button:disabled {
+    background: #93c5fd;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">{{ chatbot_title }}</div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-input">
+    <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off">
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<script>
+const chatMessages = document.getElementById("chatMessages");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+
+function addMessage(text, sender) {
+  const msg = document.createElement("div");
+  msg.className = "message " + sender;
+  msg.textContent = text;
+  chatMessages.appendChild(msg);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+
+  addMessage(text, "user");
+  userInput.value = "";
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    addMessage(data.reply, "bot");
+  } catch (err) {
+    addMessage("Network error. Please try again.", "bot");
+  } finally {
+    sendBtn.disabled = false;
+    userInput.focus();
+  }
+}
+
+sendBtn.addEventListener("click", sendMessage);
+userInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") sendMessage();
+});
+</script>
+
+</body>
+</html>
